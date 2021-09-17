@@ -5,8 +5,9 @@ import warnings
 
 import numpy as np
 
-from sklearn.gaussian_process.kernels import Matern
+from sklearn.gaussian_process.kernels import Matern, RationalQuadratic
 from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.ensemble import RandomForestRegressor
 from scipy.optimize import minimize
 from scipy.stats import norm
 
@@ -24,7 +25,7 @@ class UtilityFunction(object):
 
         self._iters_counter = 0
 
-        if kind not in ['ucb', 'ei', 'poi']:
+        if kind not in ['gp_ucb', 'gp_ei', 'gp_poi']:
             err = "The utility function " \
                   "{} has not been implemented, " \
                   "please choose one of ucb, ei, or poi.".format(kind)
@@ -32,19 +33,28 @@ class UtilityFunction(object):
         else:
             self.kind = kind
 
-    def utility(self, x_x, g_p, y_max):
-        if self.kind == 'ucb':
-            return self._ucb(x_x, g_p, self.kappa)
-        if self.kind == 'ei':
-            return self._ei(x_x, g_p, y_max, self.x_i)
-        if self.kind == 'poi':
-            return self._poi(x_x, g_p, y_max, self.x_i)
+    def utility(self, x_x, model, y_max):
+        if self.kind == 'rfr':
+            return self._rfr(x_x, model, y_max)
+        if self.kind == 'gp_ucb':
+            return self._ucb(x_x, model, self.kappa)
+        if self.kind == 'gp_ei':
+            return self._ei(x_x, model, y_max, self.x_i)
+        if self.kind == 'gp_poi':
+            return self._poi(x_x, model, y_max, self.x_i)
 
     @staticmethod
-    def _ucb(x_x, g_p, kappa):
+    def _rfr(x_x, model, y_max):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            mean, std = g_p.predict(x_x, return_std=True)
+            mean, std = model.predict(x_x, return_std=True)
+        return mean
+
+    @staticmethod
+    def _ucb(x_x, model, kappa):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            mean, std = model.predict(x_x, return_std=True)
 
         return mean + kappa * std
 
@@ -111,15 +121,16 @@ class Searcher(AbstractSearcher):
         n_suggestion: number of suggestions to return
         """
         AbstractSearcher.__init__(self, parameters_config, n_iter, n_suggestion)
-
         gp = GaussianProcessRegressor(
-            kernel=Matern(nu=2.5),
-            alpha=1e-6,
+            kernel=RationalQuadratic(),
+            alpha=1e-4,
             normalize_y=True,
             random_state=np.random.RandomState(1),
         )
+        rfr = RandomForestRegressor(n_estimators=10)
+        self.rfr = rfr
         self.gp = gp
-
+        # print(parameters_config)
     def init_param_group(self, n_suggestions):
         """ Suggest n_suggestions parameters in random form
 
@@ -164,6 +175,9 @@ class Searcher(AbstractSearcher):
         """
         self.gp.fit(x_datas, y_datas)
 
+    def train_rfc(self, x_datas, y_datas):
+        self.rfr.fit(x_datas, y_datas)
+
     def random_sample(self):
         """ Generate a random sample in the form of [value_0, value_1,... ]
 
@@ -190,7 +204,7 @@ class Searcher(AbstractSearcher):
         )
         return _bounds
 
-    def acq_max(self, f_acq, gp, y_max, bounds, num_warmup, num_starting_points):
+    def acq_max(self, f_acq, model, y_max, bounds, num_warmup, num_starting_points):
         """ Produces the best suggested parameters
 
         Args:
@@ -206,14 +220,14 @@ class Searcher(AbstractSearcher):
         """
         # Warm up with random points
         x_tries = np.array([self.random_sample() for _ in range(int(num_warmup))])
-        ys = f_acq(x_tries, g_p=gp, y_max=y_max)
+        ys = f_acq(x_tries, model=model, y_max=y_max)
         x_max = x_tries[ys.argmax()]
         max_acq = ys.max()
         # Explore the parameter space more throughly
         x_seeds = np.array([self.random_sample() for _ in range(int(num_starting_points))])
         for x_try in x_seeds:
             # Find the minimum of minus the acquisition function
-            res = minimize(lambda x: -f_acq(x.reshape(1, -1), g_p=gp, y_max=y_max),
+            res = minimize(lambda x: -f_acq(x.reshape(1, -1), model=model, y_max=y_max),
                            x_try.reshape(1, -1),
                            bounds=bounds,
                            method="L-BFGS-B")
@@ -224,7 +238,7 @@ class Searcher(AbstractSearcher):
             if max_acq is None or -res.fun[0] >= max_acq:
                 x_max = res.x
                 max_acq = -res.fun[0]
-        return np.clip(x_max, bounds[:, 0], bounds[:, 1])
+        return np.clip(x_max, bounds[:, 0], bounds[:, 1]), max_acq
 
     def parse_suggestions(self, suggestions):
         """ Parse the parameters result
@@ -293,17 +307,21 @@ class Searcher(AbstractSearcher):
             self.train_gp(x_datas, y_datas)
             _bounds = self.get_bounds()
             suggestions = []
-            for index in range(n_suggestions):
-                utility_function = UtilityFunction(kind='poi', kappa=(index + 1) * 2.567, x_i=index * 20)
-                suggestion = self.acq_max(
+            suggestions_candidate = []
+            for index in range(n_suggestions*5):
+                utility_function = UtilityFunction(kind='gp_ei', kappa=(index + 1) * 2.567, x_i=index * 3)
+                suggestion, max_acq = self.acq_max(
                     f_acq=utility_function.utility,
-                    gp=self.gp,
+                    model=self.gp,
                     y_max=y_datas.max(),
                     bounds=_bounds,
                     num_warmup=1000,
                     num_starting_points=5
                 )
-                suggestions.append(suggestion)
+                suggestions_candidate.append((suggestion, max_acq))
+            suggestions_candidate.sort(key= lambda y: y[1], reverse=True)
+            for i in range(n_suggestions):
+                suggestions.append(suggestions_candidate[i][0])
 
             suggestions = np.array(suggestions)
             suggestions = self.parse_suggestions(suggestions)
