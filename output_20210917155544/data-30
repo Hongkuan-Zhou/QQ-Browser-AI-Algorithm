@@ -1,0 +1,5 @@
+{"fun": "data-30", "repeat": 1, "iter": 1, "param": {"ap_ctr_weight": 2.201, "ap_cvr_weight": 2.451}, "reward": -3.1346083283424377}
+{"fun": "data-30", "repeat": 1, "iter": 2, "param": {"ap_ctr_weight": 0.751, "ap_cvr_weight": 3.9010000000000002}, "reward": -3.455994963645935}
+{"fun": "data-30", "repeat": 1, "iter": 3, "param": {"ap_ctr_weight": 3.251, "ap_cvr_weight": 2.851}, "reward": -2.4363002479076385}
+{"fun": "data-30", "repeat": 1, "iter": 4, "param": {"ap_ctr_weight": 4.751, "ap_cvr_weight": 3.751}, "reward": -2.5388816446065903}
+{"fun": "data-30", "repeat": 1, "iter": 5, "param": {"ap_ctr_weight": 4.251, "ap_cvr_weight": 4.9510000000000005}, "reward": -2.743722289800644}
