@@ -127,9 +127,10 @@ class Searcher(AbstractSearcher):
             normalize_y=True,
             random_state=np.random.RandomState(1),
         )
-        rfr = RandomForestRegressor(n_estimators=10)
-        self.rfr = rfr
+        #rfr = RandomForestRegressor(n_estimators=10)
+        #self.rfr = rfr
         self.gp = gp
+        self.iter = 0
         # print(parameters_config)
     def init_param_group(self, n_suggestions):
         """ Suggest n_suggestions parameters in random form
@@ -175,8 +176,8 @@ class Searcher(AbstractSearcher):
         """
         self.gp.fit(x_datas, y_datas)
 
-    def train_rfc(self, x_datas, y_datas):
-        self.rfr.fit(x_datas, y_datas)
+    # def train_rfc(self, x_datas, y_datas):
+    #     self.rfr.fit(x_datas, y_datas)
 
     def random_sample(self):
         """ Generate a random sample in the form of [value_0, value_1,... ]
@@ -300,6 +301,7 @@ class Searcher(AbstractSearcher):
                          {'p1': 0, 'p2': 1, 'p3': 3},
                          {'p1': 2, 'p2': 2, 'p3': 2}]
         """
+        self.iter += n_suggestions
         if (suggestions_history is None) or (len(suggestions_history) <= 0):
             next_suggestions = self.init_param_group(n_suggestions)
         else:
@@ -308,17 +310,18 @@ class Searcher(AbstractSearcher):
             _bounds = self.get_bounds()
             suggestions = []
             suggestions_candidate = []
-            for index in range(n_suggestions*5):
-                utility_function = UtilityFunction(kind='gp_ei', kappa=(index + 1) * 2.567, x_i=index * 3)
+            print("y_max=", y_datas.max())
+            for index in range(n_suggestions*40):
+                utility_function = UtilityFunction(kind='gp_ei', kappa=(index + 1) * 2.567, x_i=index * 2)
                 suggestion, max_acq = self.acq_max(
                     f_acq=utility_function.utility,
                     model=self.gp,
                     y_max=y_datas.max(),
                     bounds=_bounds,
-                    num_warmup=1000,
+                    num_warmup=500,
                     num_starting_points=5
                 )
-                suggestions_candidate.append((suggestion, max_acq))
+                suggestions_candidate.append((suggestion, max_acq*(1 + index*0.5)))
             suggestions_candidate.sort(key= lambda y: y[1], reverse=True)
             for i in range(n_suggestions):
                 suggestions.append(suggestions_candidate[i][0])
