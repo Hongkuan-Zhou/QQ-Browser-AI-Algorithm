@@ -14,6 +14,15 @@ from scipy.stats import norm
 # Need to import the searcher abstract class, the following are essential
 from thpo.abstract_searcher import AbstractSearcher
 
+# configurations
+De_duplication = True
+Acquisition_Function_Kind = "gp_poi"
+Kernel = RationalQuadratic(length_scale=1.2, alpha=0.5)
+Alpha = 1e-4
+OptimizationMethod = "L-BFGS-B"
+EnlargeRate = 5
+ImproveStep = 3
+
 
 class UtilityFunction(object):
     """
@@ -122,8 +131,9 @@ class Searcher(AbstractSearcher):
         """
         AbstractSearcher.__init__(self, parameters_config, n_iter, n_suggestion)
         gp = GaussianProcessRegressor(
-            kernel=RationalQuadratic(),
-            alpha=1e-4,
+            kernel=Kernel,
+            # kernel=Matern(length_scale=1.2, nu=0.5),
+            alpha=Alpha,
             normalize_y=True,
             random_state=np.random.RandomState(1),
         )
@@ -131,7 +141,9 @@ class Searcher(AbstractSearcher):
         #self.rfr = rfr
         self.gp = gp
         self.iter = 0
+        self.de_duplication = De_duplication
         # print(parameters_config)
+
     def init_param_group(self, n_suggestions):
         """ Suggest n_suggestions parameters in random form
 
@@ -145,6 +157,20 @@ class Searcher(AbstractSearcher):
                             for p_name, p_conf in self.parameters_config.items()} for _ in range(n_suggestions)]
 
         return next_suggestions
+
+    def get_valid_suggestion(self, suggestion):
+        def get_param_value(p_name, value):
+            p_coords = self.parameters_config[p_name]['coords']
+            if value in p_coords:
+                return value
+            else:
+                subtract = np.abs([p_coord - value for p_coord in p_coords])
+                min_index = np.argmin(subtract, axis=0)
+                return p_coords[min_index]
+        p_names = [p_name for p_name, p_conf in sorted(self.parameters_config.items(), key=lambda x: x[0])]
+        suggestion = {p_names[index]: suggestion[index] for index in range(len(suggestion))}
+        suggestion = [get_param_value(p_name, value) for p_name, value in suggestion.items()]
+        return suggestion
 
     def parse_suggestions_history(self, suggestions_history):
         """ Parse historical suggestions to the form of (x_datas, y_datas), to obtain GP training data
@@ -231,7 +257,7 @@ class Searcher(AbstractSearcher):
             res = minimize(lambda x: -f_acq(x.reshape(1, -1), model=model, y_max=y_max),
                            x_try.reshape(1, -1),
                            bounds=bounds,
-                           method="L-BFGS-B")
+                           method=OptimizationMethod)
             # See if success
             if not res.success:
                 continue
@@ -301,31 +327,54 @@ class Searcher(AbstractSearcher):
                          {'p1': 0, 'p2': 1, 'p3': 3},
                          {'p1': 2, 'p2': 2, 'p3': 2}]
         """
-        self.iter += n_suggestions
         if (suggestions_history is None) or (len(suggestions_history) <= 0):
             next_suggestions = self.init_param_group(n_suggestions)
         else:
+            self.iter += n_suggestions
             x_datas, y_datas = self.parse_suggestions_history(suggestions_history)
+            # print("x_datas=" ,x_datas)
+            # print("y_datas=", y_datas)
             self.train_gp(x_datas, y_datas)
             _bounds = self.get_bounds()
             suggestions = []
             suggestions_candidate = []
-            print("y_max=", y_datas.max())
-            for index in range(n_suggestions*40):
-                utility_function = UtilityFunction(kind='gp_ei', kappa=(index + 1) * 2.567, x_i=index * 2)
+            y_max = y_datas.max()
+            print("y_max=", y_max)
+            for index in range(n_suggestions*EnlargeRate):
+                x_i = index*ImproveStep+np.random.rand()*ImproveStep
+                utility_function = UtilityFunction(kind=Acquisition_Function_Kind, kappa=(index + 1) * 2.567, x_i= x_i)
                 suggestion, max_acq = self.acq_max(
                     f_acq=utility_function.utility,
                     model=self.gp,
                     y_max=y_datas.max(),
                     bounds=_bounds,
-                    num_warmup=500,
-                    num_starting_points=5
+                    num_warmup=500 + self.iter,
+                    num_starting_points=5 + self.iter
                 )
-                suggestions_candidate.append((suggestion, max_acq*(1 + index*0.5)))
-            suggestions_candidate.sort(key= lambda y: y[1], reverse=True)
-            for i in range(n_suggestions):
-                suggestions.append(suggestions_candidate[i][0])
-
+                suggestions_candidate.append((suggestion, max_acq*(index+1)))
+            suggestions_candidate.sort(key=lambda y: y[1], reverse=True)
+            if self.de_duplication:
+                i = 0
+                j = 0
+                while i < n_suggestions and j < len(suggestions_candidate):
+                    t = False
+                    for data in x_datas:
+                        if (data == np.array(self.get_valid_suggestion(suggestions_candidate[j][0]))).all():
+                            t = True
+                            break
+                    if t:
+                        j += 1
+                    else:
+                        suggestions.append(suggestions_candidate[j][0])
+                        i += 1
+                        j += 1
+                print("i=", i)
+                while i < n_suggestions:
+                    suggestions.append(self.random_sample())
+                    i += 1
+            else:
+                for i in range(n_suggestions):
+                    suggestions.append(suggestions_candidate[i][0])
             suggestions = np.array(suggestions)
             suggestions = self.parse_suggestions(suggestions)
             next_suggestions = suggestions
