@@ -83,7 +83,9 @@ def modelFit(train_size,input_length,lr,X,Y,validation_split=0,epochs=1):
         loss=_negative_loglikelihood,
         metrics=[keras.metrics.RootMeanSquaredError()],
     )
-
+    
+    Y = tf.cast(Y,tf.float32)
+    
     model.fit(x=X,y=Y,epochs=epochs,validation_split=validation_split)
     return model
 
