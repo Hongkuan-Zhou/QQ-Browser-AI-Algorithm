@@ -1,0 +1,15 @@
+{"fun": "data-30", "repeat": 1, "iter": 1, "param": {"ap_ctr_weight": 4.101000000000001, "ap_cvr_weight": 0.6010000000000001}, "reward": -4.319668143987656}
+{"fun": "data-30", "repeat": 1, "iter": 2, "param": {"ap_ctr_weight": 3.9010000000000002, "ap_cvr_weight": 3.051}, "reward": -1.6721375808119774}
+{"fun": "data-30", "repeat": 1, "iter": 3, "param": {"ap_ctr_weight": 0.501, "ap_cvr_weight": 3.851}, "reward": -1.2909885421395302}
+{"fun": "data-30", "repeat": 1, "iter": 4, "param": {"ap_ctr_weight": 4.051, "ap_cvr_weight": 3.051}, "reward": -1.862755611538887}
+{"fun": "data-30", "repeat": 1, "iter": 5, "param": {"ap_ctr_weight": 3.351, "ap_cvr_weight": 0.551}, "reward": -3.658076226711273}
+{"fun": "data-30", "repeat": 2, "iter": 1, "param": {"ap_ctr_weight": 0.6010000000000001, "ap_cvr_weight": 3.501}, "reward": -2.9450661838054657}
+{"fun": "data-30", "repeat": 2, "iter": 2, "param": {"ap_ctr_weight": 0.651, "ap_cvr_weight": 3.801}, "reward": -3.0630722641944885}
+{"fun": "data-30", "repeat": 2, "iter": 3, "param": {"ap_ctr_weight": 0.6010000000000001, "ap_cvr_weight": 3.101}, "reward": -2.9275678396224976}
+{"fun": "data-30", "repeat": 2, "iter": 4, "param": {"ap_ctr_weight": 1.351, "ap_cvr_weight": 1.001}, "reward": -0.9236720874905586}
+{"fun": "data-30", "repeat": 2, "iter": 5, "param": {"ap_ctr_weight": 2.101, "ap_cvr_weight": 1.651}, "reward": -2.6398306488990784}
+{"fun": "data-30", "repeat": 3, "iter": 1, "param": {"ap_ctr_weight": 2.251, "ap_cvr_weight": 3.101}, "reward": -3.3256236612796783}
+{"fun": "data-30", "repeat": 3, "iter": 2, "param": {"ap_ctr_weight": 3.051, "ap_cvr_weight": 0.551}, "reward": -3.274906426668167}
+{"fun": "data-30", "repeat": 3, "iter": 3, "param": {"ap_ctr_weight": 1.351, "ap_cvr_weight": 0.8510000000000001}, "reward": -0.7133212517946959}
+{"fun": "data-30", "repeat": 3, "iter": 4, "param": {"ap_ctr_weight": 0.551, "ap_cvr_weight": 0.001}, "reward": -1.3377327919006348}
+{"fun": "data-30", "repeat": 3, "iter": 5, "param": {"ap_ctr_weight": 3.101, "ap_cvr_weight": 3.751}, "reward": -2.6944831758737564}

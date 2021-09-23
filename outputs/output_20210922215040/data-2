@@ -1,0 +1,5 @@
+{"fun": "data-2", "repeat": 1, "iter": 1, "param": {"p1": 29, "p2": 6, "p3": 7}, "reward": -21.645289270843193}
+{"fun": "data-2", "repeat": 1, "iter": 2, "param": {"p1": 8, "p2": 46, "p3": 32}, "reward": -28.217143154839878}
+{"fun": "data-2", "repeat": 1, "iter": 3, "param": {"p1": 21, "p2": 2, "p3": 38}, "reward": -15.606880222039727}
+{"fun": "data-2", "repeat": 1, "iter": 4, "param": {"p1": 36, "p2": 39, "p3": 38}, "reward": -0.7678799128354692}
+{"fun": "data-2", "repeat": 1, "iter": 5, "param": {"p1": 18, "p2": 20, "p3": 38}, "reward": 1.7918061781027106}

@@ -13,10 +13,8 @@ import thpo.common as common
 
 def is_implement_searcher(searcher_root):
     """ Test whether searcher is implemented
-
     Args:
         searcher_root: directory of searcher
-
     Return:
         True/False: whether searcher is implemented
     """
@@ -34,10 +32,8 @@ def is_implement_searcher(searcher_root):
 
 def experiment(args):
     """ Run experiment
-
     Args:
         args: arguments for running searching task
-
     Return:
         err_code: error code of searching task
         err_msg: error message of searching task
