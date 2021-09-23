@@ -294,7 +294,7 @@ class Searcher(AbstractSearcher):
             _bounds = self.get_bounds()
             suggestions = []
             for index in range(n_suggestions):
-                utility_function = UtilityFunction(kind='poi', kappa=(index + 1) * 2.567, x_i=index * 20)
+                utility_function = UtilityFunction(kind='poi', kappa=(index + 1) * 2.576, x_i=index * 20)
                 suggestion = self.acq_max(
                     f_acq=utility_function.utility,
                     gp=self.gp,
