@@ -19,6 +19,7 @@ from tensorflow.keras.layers import *
 # Note that, in this example, the we prior distribution is not trainable,
 # as we fix its parameters.
 
+
 def _prior(kernel_size, bias_size, dtype=None):
     n = kernel_size + bias_size
     prior_model = keras.Sequential(
@@ -49,12 +50,11 @@ def _posterior(kernel_size, bias_size, dtype=None):
     return posterior_model
 
 
-
 def _negative_loglikelihood(targets, estimated_distribution):
     return -estimated_distribution.log_prob(targets)
 
 
-def modelFit(train_size,input_length,lr,X,Y,validation_split=0,epochs=1):
+def modelFit(train_size, input_length, lr, X, Y, validation_split=0, epochs=1):
     '''
     train_size: the size of the training set; int
     input_length: the dimension of one trainig example; int
@@ -71,8 +71,8 @@ def modelFit(train_size,input_length,lr,X,Y,validation_split=0,epochs=1):
 
     inputs = Input(shape=(input_length,))
     x = BatchNormalization()(inputs)
-    x = tfp.layers.DenseVariational(units=8,make_prior_fn=_prior,make_posterior_fn=_posterior,kl_weight=1 / train_size,activation='sigmoid')(x)
-    x = tfp.layers.DenseVariational(units=8,make_prior_fn=_prior,make_posterior_fn=_posterior,kl_weight=1 / train_size,activation='sigmoid')(x)
+    x = tfp.layers.DenseVariational(units=8, make_prior_fn=_prior, make_posterior_fn=_posterior, kl_weight=1 / train_size, activation='sigmoid')(x)
+    x = tfp.layers.DenseVariational(units=8, make_prior_fn=_prior, make_posterior_fn=_posterior, kl_weight=1 / train_size, activation='sigmoid')(x)
     distribution_params = layers.Dense(units=2)(x)
     outputs = tfp.layers.IndependentNormal(1)(distribution_params)
 
@@ -85,12 +85,10 @@ def modelFit(train_size,input_length,lr,X,Y,validation_split=0,epochs=1):
         metrics=[keras.metrics.RootMeanSquaredError()],
     )
 
-    model.fit(x=X,y=Y,epochs=epochs,validation_split=validation_split)
+    model.fit(x=X, y=Y, epochs=epochs, validation_split=validation_split)
     return model
 
-
-
-def modelPredict(trained_model,X):
+def modelPredict(trained_model, X):
     prediction_distribution = trained_model(X)
     prediction_mean = prediction_distribution.mean().numpy().tolist()
     prediction_stdv = prediction_distribution.stddev().numpy()
