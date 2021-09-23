@@ -23,12 +23,12 @@ Acquisition_Function_Kind = "gp_ei"
 Alpha = 1e-5
 OptimizationMethod = "L-BFGS-B"
 EnlargeRate = 1
-ImproveStep = 3
+ImproveStep = 5
 Lambda = 1
 Use_thread = False
 NumGP = 7
-NumStartingPoints = 2
-Increase = 0.35
+NumStartingPoints = 8
+Increase = 0
 TOL = 1e-5
 
 

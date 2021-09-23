@@ -31,6 +31,9 @@ NumStartingPoints = 2
 Increase = 0.35
 TOL = 1e-5
 
+def single_predict(x_x, model):
+    return model.predict(x_x, return_std=True)
+
 
 class UtilityFunction(object):
     """
@@ -52,50 +55,43 @@ class UtilityFunction(object):
             self.kind = kind
 
     def utility(self, x_x, model, y_max):
-        if self.kind == 'rfr':
-            return self._rfr(x_x, model, y_max)
-        if self.kind == 'gp_ucb':
-            return self._ucb(x_x, model, self.kappa)
         if self.kind == 'gp_ei':
             return self._ei(x_x, model, y_max, self.x_i)
         if self.kind == 'gp_poi':
             return self._poi(x_x, model, y_max, self.x_i)
 
-    @staticmethod
-    def _rfr(x_x, model, y_max):
+    def _ei(self, x_x, g_p, y_max, x_i):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            mean, std = model.predict(x_x, return_std=True)
-        return mean
 
-    @staticmethod
-    def _ucb(x_x, model, kappa):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            mean, std = model.predict(x_x, return_std=True)
+            # ============ use threads ============#
+            # executor = ThreadPoolExecutor(max_workers=10)
+            # futures = []
+            # for gp in g_p:
+            #     futures.append(executor.submit(single_predict, x_x, gp))
+            # maximum = None
+            # for f in futures:
+            #     mean, std = f.result()
+            #     a_a = (mean - y_max - x_i)
+            #     z_z = a_a / std
+            #     x = a_a * norm.cdf(z_z) + std * norm.pdf(z_z)
+            #     if maximum is None:
+            #         maximum = x
+            #     else:
+            #         maximum[maximum < x] = x[maximum < x]
+            # ============ do not use threads ============#
+            maximum = None
+            for gp in g_p:
+                mean, std = single_predict(x_x, gp)
+                a_a = (mean - y_max - x_i)
+                z_z = a_a / std
+                x = a_a * norm.cdf(z_z) + std * norm.pdf(z_z)
+                if maximum is None:
+                    maximum = x
+                else:
+                    maximum[maximum < x] = x[maximum < x]
 
-        return mean + kappa * std
-
-
-    @staticmethod
-    def _ei(x_x, g_p, y_max, x_i):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            means = []
-            stds = []
-            for i in range(len(g_p)):
-                mean, std = g_p[i].predict(x_x, return_std=True)
-                means.append(mean)
-                stds.append(std)
-        maximum = None
-        for i in range(len(means)):
-            a_a = (means[i] - y_max - x_i)
-            z_z = a_a / stds[i]
-            x = a_a * norm.cdf(z_z) + stds[i] * norm.pdf(z_z)
-            if maximum is None:
-                maximum = x
-            else:
-                maximum[maximum < x] = x[maximum < x]
+            # ============ do not use threads ============#
         return maximum
 
     @staticmethod
@@ -234,7 +230,8 @@ class Searcher(AbstractSearcher):
         Return:
             gp: Gaussian process regression
         """
-        pool = multiprocessing.Pool(8)
+        num_cores = int(multiprocessing.cpu_count())
+        pool = multiprocessing.Pool(num_cores)
         res_l = []
         for i in range(self.gp_num):
             p = pool.apply_async(self.train_gp, args=(self.gp[i], i, x_datas, y_datas))
@@ -291,7 +288,18 @@ class Searcher(AbstractSearcher):
             Return the current optimal parameters
         """
         # Warm up with random points
-        x_tries = np.array([self.random_sample() for _ in range(int(num_warmup))])
+        if Use_thread:
+            futures = []
+            x_tries = []
+            executor = ThreadPoolExecutor(max_workers=8)
+            for _ in range(int(num_warmup)):
+                futures.append(executor.submit(self.random_sample))
+            for f in futures:
+                x_tries.append(f.result())
+            x_tries = np.array(x_tries)
+        else:
+            x_tries = np.array([self.random_sample() for _ in range(int(num_warmup))])
+
         ys = f_acq(x_tries, model=model, y_max=y_max)
         x_max = x_tries[ys.argmax()]
         max_acq = ys.max()
@@ -348,8 +356,8 @@ class Searcher(AbstractSearcher):
             model=self.gp,
             y_max=y_datas.max(),
             bounds=_bounds,
-            num_warmup=500,
-            num_starting_points=NumStartingPoints + Increase * self.iter
+            num_warmup=400,
+            num_starting_points=int(NumStartingPoints + Increase * self.iter)
         )
         return suggestion, max_acq
 
@@ -387,6 +395,7 @@ class Searcher(AbstractSearcher):
                          {'p1': 0, 'p2': 1, 'p3': 3},
                          {'p1': 2, 'p2': 2, 'p3': 2}]
         """
+        self.iter += 1
         if (suggestions_history is None) or (len(suggestions_history) <= 0):
             next_suggestions = self.init_param_group(n_suggestions)
         else:
@@ -406,13 +415,12 @@ class Searcher(AbstractSearcher):
             suggestions = []
             suggestions_candidate = []
             y_max = y_datas.max()
-            pool = multiprocessing.Pool(10)
+            num_cores = int(multiprocessing.cpu_count())
+            pool = multiprocessing.Pool(num_cores)
             res_l = []
-            for index in range(n_suggestions+2):
-                p = pool.apply_async(self.get_single_suggest, args=(index, y_datas,_bounds))
+            for index in range(n_suggestions + 2):
+                p = pool.apply_async(self.get_single_suggest, args=(index, y_datas, _bounds))
                 res_l.append(p)
-            pool.close()
-            pool.join()
             for index in range(len(res_l)):
                 r = res_l[index]
                 suggestion, max_acq = r.get()
@@ -458,5 +466,5 @@ class Searcher(AbstractSearcher):
             next_suggestions = suggestions
             print("y_max =", y_max)
             print("improve_stetp =", self.improve_step)
-        self.iter += 1
+
         return next_suggestions

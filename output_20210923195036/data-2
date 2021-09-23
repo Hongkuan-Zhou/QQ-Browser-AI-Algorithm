@@ -1,0 +1,15 @@
+{"fun": "data-2", "repeat": 1, "iter": 1, "param": {"p1": 28, "p2": 49, "p3": 24}, "reward": -9.77726797179784}
+{"fun": "data-2", "repeat": 1, "iter": 2, "param": {"p1": 30, "p2": 46, "p3": 45}, "reward": -5.811066553908812}
+{"fun": "data-2", "repeat": 1, "iter": 3, "param": {"p1": 23, "p2": 43, "p3": 2}, "reward": -12.935345215658282}
+{"fun": "data-2", "repeat": 1, "iter": 4, "param": {"p1": 40, "p2": 27, "p3": 48}, "reward": 0.12823724960319183}
+{"fun": "data-2", "repeat": 1, "iter": 5, "param": {"p1": 48, "p2": 0, "p3": 11}, "reward": -37.24236499142061}
+{"fun": "data-2", "repeat": 2, "iter": 1, "param": {"p1": 31, "p2": 34, "p3": 23}, "reward": -2.3439077855002375}
+{"fun": "data-2", "repeat": 2, "iter": 2, "param": {"p1": 35, "p2": 26, "p3": 34}, "reward": -0.8797372372283707}
+{"fun": "data-2", "repeat": 2, "iter": 3, "param": {"p1": 35, "p2": 37, "p3": 6}, "reward": -4.147084176327562}
+{"fun": "data-2", "repeat": 2, "iter": 4, "param": {"p1": 9, "p2": 12, "p3": 10}, "reward": -3.583124243081474}
+{"fun": "data-2", "repeat": 2, "iter": 5, "param": {"p1": 2, "p2": 15, "p3": 20}, "reward": -24.87155759132417}
+{"fun": "data-2", "repeat": 3, "iter": 1, "param": {"p1": 32, "p2": 45, "p3": 8}, "reward": -7.607008358237122}
+{"fun": "data-2", "repeat": 3, "iter": 2, "param": {"p1": 1, "p2": 35, "p3": 30}, "reward": -37.16463946706938}
+{"fun": "data-2", "repeat": 3, "iter": 3, "param": {"p1": 21, "p2": 38, "p3": 42}, "reward": -7.751050033479839}
+{"fun": "data-2", "repeat": 3, "iter": 4, "param": {"p1": 7, "p2": 48, "p3": 34}, "reward": -29.324197322245077}
+{"fun": "data-2", "repeat": 3, "iter": 5, "param": {"p1": 38, "p2": 35, "p3": 31}, "reward": -1.152779407183301}
