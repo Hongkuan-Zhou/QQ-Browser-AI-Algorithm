@@ -62,6 +62,8 @@ def modelFit(train_size,input_length,lr,X,Y,validation_split=0,epochs=1):
     Y: labels
     validation_split: ratio to split from (X,Y) as validation set
     epochs: number of epochs; int
+    
+    return: the trained model
     '''
 
     tf.keras.backend.clear_session()
