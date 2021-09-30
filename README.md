@@ -2,14 +2,22 @@
 
 ### ACM CIKM 2021 AnalyticCup
 
-在信息流推荐业务场景中普遍存在模型或策略效果依赖于“超参数”的问题，而“超参数"的设定往往依赖人工经验调参，不仅效率低下维护成本高，而且难以实现更优效果。因此，本次赛题以超参数优化为主题，从真实业务场景问题出发，并基于脱敏后的数据集来评测各个参赛队伍的超参数优化算法。本赛题为超参数优化问题或黑盒优化问题：给定超参数的取值空间，每一轮可以获取一组超参数对应的Reward，要求超参数优化算法在限定的迭代轮次内找到Reward尽可能大的一组超参数，最终按照找到的最大Reward来计算排名。
+在信息流推荐业务场景中普遍存在模型或策略效果依赖于“超参数”的问题，而“超参数"的设定往往依赖人工经验调参，不仅效率低下维护成本高，而且难以实现更优效果。因此，本次赛题以超参数优化为主题，从真实业务场景问题出发，并基于脱敏后的数据集来评测各个参赛队伍的超参数优化算法。
+
+初赛为黑盒优化问题：给定超参数的取值空间，每一轮可以获取一组超参数对应的Reward，要求超参数优化算法在限定的迭代轮次内找到Reward尽可能大的一组超参数，最终按照找到的最大Reward来计算排名。
+
+决赛为更有挑战的优化问题：在初赛题目设定的基础上，额外对Reward提供了置信区间信息，要求通过early-stop算法的优化，使用更少的迭代资源找到Reward尽可能大的一组超参数，最终按照找到的最大Reward来计算排名。
 
 ## 1. 重要资源
 
 * 比赛官网：[QQ浏览器2021AI算法大赛](https://algo.browser.qq.com/)
 * 参赛手册：[自动超参数优化参赛手册](https://docs.qq.com/doc/p/681e40251e75740c654289ddfb827b7571107693?dver=2.1.27141849)
-* 代码仓库：[THPO-Kit Github](https://github.com/QQ-Browser-AI-Algorithm-Competition/THPO_Kit_2021)
-* 实现和评分参考：[THPO-Kit 介绍文档](https://docs.qq.com/doc/p/ab5c751cdc66a2f7abde4a3701ce375dd56ea713?dver=2.1.27141849)
+* 初赛阶段：
+  * 代码仓库：[THPO-Kit Github](https://github.com/QQ-Browser-AI-Algorithm-Competition/THPO_Kit_2021)
+  * 实现和评分参考：[THPO-Kit 介绍文档](https://docs.qq.com/doc/p/ab5c751cdc66a2f7abde4a3701ce375dd56ea713?dver=2.1.27141849)
+* 决赛阶段：
+  * 代码仓库：[THPO-Final-Kit Github](https://github.com/QQ-Browser-AI-Algorithm-Competition/THPO_Final_Kit_2021)
+  * 实现和评分参考：[THPO-final-Kit 介绍文档](https://docs.qq.com/doc/p/91cf1a0033fff380993379ddee9635a474579752?dver=2.1.27211085)
 * 代码提交：[比赛代码提交入口](https://algo.browser.qq.com/profile.html)
 * 比赛FAQ：[比赛常问问题](https://github.com/QQ-Browser-AI-Algorithm-Competition/THPO_Kit_2021/blob/main/FAQ.md#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
 
@@ -55,10 +63,10 @@ pip3 install -r requirements.txt
 
 ### 3.2 算法创建
 
-1. 参照 **example_randon_searcher**，新建一个自己算法的目录**my_algo**
+1. 参照 **example_random_searcher**，新建一个自己算法的目录**my_algo**
 2. 在**my_algo**目录下新建**searcher.py**文件
 3. 在**searcher.py**文件里实现自己的**Searcher**类（文件名和类名不允许自定义）
-4. 实现 **\_\_init\_\_** 和 **suggest** 函数
+4. 实现 **\_\_init\_\_** 、 **suggest** 和 **is_early_stop** 函数
 5. 修改 **local_test.sh**，将**SEARCHER**修改为**my_algo**
 6. 执行 **local_test.sh** 脚本，将得到算法的执行结果
 
@@ -79,24 +87,31 @@ from thpo.abstract_searcher import AbstractSearcher
 from random import randint
 
 class Searcher(AbstractSearcher):
-    searcher_name = "RandomSearcher"
+    searcher_name = "RandomSearcherWithNotEarlyStop"
 
     def __init__(self, parameters_config, n_iter, n_suggestion):
-        AbstractSearcher.__init__(self, 
-                                  parameters_config, 
-                                  n_iter,
-                                  n_suggestion)
+        AbstractSearcher.__init__(self, parameters_config, n_iter, n_suggestion)
 
-    def suggest(self, suggestion_history, n_suggestions=1):
+    def suggest_old(self, suggestion_history, n_suggestions=1):
         next_suggestions = []
-        for i in range(n_suggestions):
+        for __ in range(n_suggestions):
             next_suggest = {
-                name: 
-                conf["coords"][randint(0,len(conf["coords"])-1)]
-                for name, conf in self.parameters_config.items()
+                p_name: p_conf["coords"][random.randint(0, len(p_conf["coords"]) - 1)]
+                for p_name, p_conf in self.parameters_config.items()
             }
             next_suggestions.append(next_suggest)
+
         return next_suggestions
+
+    def suggest(self, iteration_number, running_suggestions, suggestion_history, n_suggestions=1):
+        new_suggestions_history = []
+        for suggestion in suggestion_history:
+            new_suggestions_history.append([suggestion["parameter"], suggestion['reward'][-1]['value']])
+        return self.suggest_old(new_suggestions_history, n_suggestions)
+
+    def is_early_stop(self, iteration_number, running_suggestions, suggestion_history):
+        res = [False] * len(running_suggestions)
+        return res
 ```
 
 *Step 5:[local_test.sh]*
@@ -163,14 +178,23 @@ https://algo.browser.qq.com/
 
 ### ACM CIKM 2021 AnalyticCup
 
-The choices of hyperparameters have critical effects on models or strategies in recommendation systems. But the hyperparameters are mostly chosen based on experience, which brings high maintenance costs and sub-optimal results. Thus, this track aims at automated hyperparameters optimization based on anonymized realistic industrial tasks and datasets. Given the space of all possible hyperparameters' values, a reward could be achieved with a set of hyperparameters in each iteration. The participants are asked to maximize the reward within a given limit of iterations with a hyperparameters optimization algorithm. The final rank of the participants will be the rank of their maximum reward.
+The choices of hyperparameters have critical effects on models or strategies in recommendation systems. But the hyperparameters are mostly chosen based on experience, which brings high maintenance costs and sub-optimal results. Thus, this track aims at automated hyperparameters optimization based on anonymized realistic industrial tasks and datasets.
+
+The preliminary contest is a black-box optimization problem: Given the space of all possible hyperparameters' values, a reward could be achieved with a set of hyperparameters in each iteration. The participants are asked to maximize the reward within a given limit of iterations with a hyperparameters optimization algorithm. The final rank of the participants will be the rank of their maximum reward.
+
+The final contest is a more challenging optimization problem: the confidence interval information for the reward is additionally provided, and the optimization of the early-stop algorithm is required. The participants are asked to use fewer iteration resources to maximize the reward. The final rank of the participants will be the rank of their maximum reward.
+
 
 ## 1.Resource
 
 * Official website：[QQ Browser 2021 AI Algorithm Competiton](https://algo.browser.qq.com/#en)
 * Contest manual：[Automated Hyperparameter Optimization Contest manual](https://docs.qq.com/doc/p/9b3e04cecb9631e393e4316d4b10eaa781b5fd61?dver=2.1.27141849)
-* Code repository：[THPO-Kit Github](https://github.com/QQ-Browser-AI-Algorithm-Competition/THPO_Kit_2021)
-* API reference & ranking rules：[Introduction to THPO-Kit](https://docs.qq.com/doc/p/f274d4d7a1e666b652048b72fb6d3a946ed18c7f?dver=2.1.27141849)
+* The preliminary stage：
+  * Code repository：[THPO-Kit Github](https://github.com/QQ-Browser-AI-Algorithm-Competition/THPO_Kit_2021)
+  * API reference & ranking rules：[Introduction to THPO-Kit](https://docs.qq.com/doc/p/f274d4d7a1e666b652048b72fb6d3a946ed18c7f?dver=2.1.27141849)
+* The final stage：
+  * Code repository：[THPO-Final-Kit Github](https://github.com/QQ-Browser-AI-Algorithm-Competition/THPO_Final_Kit_2021)
+  * API reference & ranking rules：[THPO-final-Kit 介绍文档](https://docs.qq.com/doc/p/91cf1a0033fff380993379ddee9635a474579752?dver=2.1.27211085)
 * Code submission：[Code submission entry](https://algo.browser.qq.com/profile.html#en)
 * Competition FAQ：[Frequently asked questions](https://github.com/QQ-Browser-AI-Algorithm-Competition/THPO_Kit_2021/blob/main/FAQ.md#frequently-asked-questions)
 
@@ -216,10 +240,10 @@ pip3 install -r requirements.txt
 
 ### 3.2 Create a searcher
 
-1. Refer to **example_randon_searcher**, create a new directory **my_algo** for your algorithm
+1. Refer to **example_random_searcher**, create a new directory **my_algo** for your algorithm
 2. Create a new **searcher.py** file in the **my_algo** directory
 3. Implement your own **Searcher** class in the **searcher.py** file (the file name and class name are not allowed to be customized)
-4. Implement **\_\_init\_\_** and **suggest** functions
+4. Implement **\_\_init\_\_** , **suggest** and  **is_early_stop** functions
 5. Modify **local_test.sh** and change **SEARCHER** to **my_algo**
 6. Execute the **local_test.sh** script to get the results of the algorithm
 
@@ -240,24 +264,31 @@ from thpo.abstract_searcher import AbstractSearcher
 from random import randint
 
 class Searcher(AbstractSearcher):
-    searcher_name = "RandomSearcher"
+    searcher_name = "RandomSearcherWithNotEarlyStop"
 
     def __init__(self, parameters_config, n_iter, n_suggestion):
-        AbstractSearcher.__init__(self, 
-                                  parameters_config, 
-                                  n_iter,
-                                  n_suggestion)
+        AbstractSearcher.__init__(self, parameters_config, n_iter, n_suggestion)
 
-    def suggest(self, suggestion_history, n_suggestions=1):
+    def suggest_old(self, suggestion_history, n_suggestions=1):
         next_suggestions = []
-        for i in range(n_suggestions):
+        for __ in range(n_suggestions):
             next_suggest = {
-                name: 
-                conf["coords"][randint(0,len(conf["coords"])-1)]
-                for name, conf in self.parameters_config.items()
+                p_name: p_conf["coords"][random.randint(0, len(p_conf["coords"]) - 1)]
+                for p_name, p_conf in self.parameters_config.items()
             }
             next_suggestions.append(next_suggest)
+
         return next_suggestions
+
+    def suggest(self, iteration_number, running_suggestions, suggestion_history, n_suggestions=1):
+        new_suggestions_history = []
+        for suggestion in suggestion_history:
+            new_suggestions_history.append([suggestion["parameter"], suggestion['reward'][-1]['value']])
+        return self.suggest_old(new_suggestions_history, n_suggestions)
+
+    def is_early_stop(self, iteration_number, running_suggestions, suggestion_history):
+        res = [False] * len(running_suggestions)
+        return res
 ```
 
 *Step 5:[local_test.sh]*

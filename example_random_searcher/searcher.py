@@ -50,11 +50,11 @@ class Searcher(AbstractSearcher):
         """
         AbstractSearcher.__init__(self, parameters_config, n_iter, n_suggestion)
 
-    def suggest(self, suggestion_history, n_suggestions=1):
-        """ Suggest next n_suggestion parameters.
+    def suggest_old(self, suggestion_history, n_suggestions=1):
+        """ Suggest next n_suggestion parameters, old implementation of preliminary competition.
 
         Args:
-            suggestions_history: a list of historical suggestion parameters and rewards, in the form of
+            suggestion_history: a list of historical suggestion parameters and rewards, in the form of
                     [[Parameter, Reward], [Parameter, Reward] ... ]
                         Parameter: a dict in the form of {name:value, name:value, ...}. for example:
                             {'p1': 0, 'p2': 0, 'p3': 0}
@@ -93,3 +93,73 @@ class Searcher(AbstractSearcher):
             next_suggestions.append(next_suggest)
 
         return next_suggestions
+
+    def suggest(self, iteration_number, running_suggestions, suggestion_history, n_suggestions=1):
+        """ Suggest next n_suggestion parameters. new implementation of final competition
+
+        Args:
+            iteration_number: int ,the iteration number of experiment, range in [1, 140]
+
+            running_suggestions: a list of historical suggestion parameters and rewards, in the form of
+                    [{"parameter": Parameter, "reward": Reward}, {"parameter": Parameter, "reward": Reward} ... ]
+                Parameter: a dict in the form of {name:value, name:value, ...}. for example:
+                    {'p1': 0, 'p2': 0, 'p3': 0}
+                Reward: a list of dict, each dict of the list corresponds to an iteration,
+                    the dict is in the form of {'value':value,  'upper_bound':upper_bound, 'lower_bound':lower_bound} 
+                    Reward example:
+                        [{'value':1, 'upper_bound':2,   'lower_bound':0},   # iter 1
+                         {'value':1, 'upper_bound':1.5, 'lower_bound':0.5}  # iter 2
+                        ]
+
+            suggestion_history: a list of historical suggestion parameters and rewards, in the same form of running_suggestions
+
+            n_suggestion: int, number of suggestions to return
+
+        Returns:
+            next_suggestions: list of Parameter, in the form of
+                    [Parameter, Parameter, Parameter ...]
+                        Parameter: a dict in the form of {name:value, name:value, ...}. for example:
+                            {'p1': 0, 'p2': 0, 'p3': 0}
+                    For example:
+                        when n_suggestion = 3, then
+                        [{'p1': 0, 'p2': 0, 'p3': 0},
+                         {'p1': 0, 'p2': 1, 'p3': 3},
+                         {'p1': 2, 'p2': 2, 'p3': 2}]
+        """
+        new_suggestions_history = []
+        for suggestion in suggestion_history:
+            new_suggestions_history.append([suggestion["parameter"], suggestion['reward'][-1]['value']])
+        return self.suggest_old(new_suggestions_history, n_suggestions)
+
+    def is_early_stop(self, iteration_number, running_suggestions, suggestion_history):
+        """ Decide whether to stop the running suggested parameter experiment.
+
+        Args:
+            iteration_number: int, the iteration number of experiment, range in [1, 140]
+
+            running_suggestions: a list of historical suggestion parameters and rewards, in the form of
+                    [{"parameter": Parameter, "reward": Reward}, {"parameter": Parameter, "reward": Reward} ... ]
+                Parameter: a dict in the form of {name:value, name:value, ...}. for example:
+                    {'p1': 0, 'p2': 0, 'p3': 0}
+                Reward: a list of dict, each dict of the list corresponds to an iteration,
+                    the dict is in the form of {'value':value,  'upper_bound':upper_bound, 'lower_bound':lower_bound} 
+                    Reward example:
+                        [{'value':1, 'upper_bound':2,   'lower_bound':0},   # iter 1
+                         {'value':1, 'upper_bound':1.5, 'lower_bound':0.5}  # iter 2
+                        ]
+
+            suggestion_history: a list of historical suggestion parameters and rewards, in the same form of running_suggestions
+
+        Returns:
+            stop_list: list of bool, indicate whether to stop the running suggestions.
+                    len(stop_list) must be the same as len(running_suggestions), for example:
+                        len(running_suggestions) = 3, stop_list could be : 
+                            [True, True, True] , which means to stop all the three running suggestions
+        """
+
+        # Early Stop algorithm demo 1: 
+        #
+        #   Don't stop early, let suggestions run all 14 iterations
+        #
+        res = [False] * len(running_suggestions)
+        return res

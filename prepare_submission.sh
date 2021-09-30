@@ -24,7 +24,7 @@ REQUIREMENTS_FILE=./$UPLOAD_DIR/requirements.txt
 touch $REQUIREMENTS_FILE
 
 # download extra package in requirements.txt
-pip3 download -r $REQUIREMENTS_FILE -d ./$UPLOAD_DIR --python-version 36 --implementation cp --platform linux_x86_64 --abi cp36m --no-deps
+pip3 download -r $REQUIREMENTS_FILE -d ./$UPLOAD_DIR --only-binary=:none: --python-version 36 --implementation cp --platform linux_x86_64 --abi cp36m --no-deps
 
 ! test -f $UPLOAD_DIR.zip
 

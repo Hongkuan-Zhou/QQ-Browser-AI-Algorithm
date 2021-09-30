@@ -62,16 +62,16 @@ class EvaluateFunction():
         with open(path, "r") as f:
             ds_json = json.load(f)
         self.da = xr.DataArray.from_dict(ds_json)
-        self.dims = self.da.dims
+        self.dims = self.da.attrs["dims"]
         self.parameters_config = {}
         for dim in self.dims:
             assert dim in self.da.attrs, "dim not in attrs"
             self.parameters_config[dim] = self.da.attrs[dim]
         self.name = self.da.name
         self.baseline = self.da.attrs["baseline"]
-        assert iters <= self.baseline["iters"], "iters is more than setting"
-        self.baseline["median"] = np.array(self.baseline["median"][0:iters])
-        self.baseline["mean"] = np.array(self.baseline["mean"][0:iters])
+        # assert iters <= self.baseline["iters"], "iters is more than setting"
+        self.baseline["median"] = np.array(self.baseline["median"][0:100])
+        self.baseline["mean"] = np.array(self.baseline["mean"][0:100])
 
     def evaluate(self, params):
         """ evaluate reward for a suggestion point
@@ -91,7 +91,25 @@ class EvaluateFunction():
         # Convert parameters to coordinates in "coords"
         new_params = {dim: get_param_value(dim, params[dim]) for dim in self.dims}
 
-        return float(self.da.loc[new_params].values)
+        return self.da.loc[new_params].values
+
+    def evaluate_final(self, suggestions):
+        evaluate_res = []
+        for suggestion in suggestions:
+            score_list = self.get_paramter_score(suggestion['parameter'])
+            get_len = 1
+            if 'reward' in suggestion:
+                get_len = len(suggestion['reward']) + 1
+            suggestion['reward'] = score_list[:get_len]
+            evaluate_res.append(suggestion)
+        return evaluate_res
+
+    def get_paramter_score(self, paramter):
+        ori_score = self.evaluate(paramter)
+        score_list = []
+        for s in ori_score:
+            score_list.append({'value':s[0], 'lower_bound':s[1], 'upper_bound':s[2]})
+        return score_list
 
     def get_param_config(self):
         """ Get parameter config of evaluation function

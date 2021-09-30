@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Dataset name
-DATASET="data-2 data-30"
+DATASET="data-30 data-2"
 
 # Default experimental parameters in competition
 # Number of iterations
 # To run faster, you can set N_ITERATION smaller in local test
-N_ITERATION=20
+N_ITERATION=140
 # number of suggestions
 N_SUGGESTION=5
 # number of repeats
@@ -17,15 +17,15 @@ command -v python3 >/dev/null 2>&1 || (echo err:python3 is not found, please ins
 
 # Test random search
 # Directory of searcher.py
-SEARCHER="EI_MCMC_bayesian_optimization"
+# SEARCHER="example_random_optimization"
 
 # Run searcher in all dataset
-python3 main.py -o $SEARCHER -d $DATASET -i $N_ITERATION -s $N_SUGGESTION -r $N_REPEAT
+# python3 main.py -o $SEARCHER -d $DATASET -i $N_ITERATION -s $N_SUGGESTION -r $N_REPEAT
 
 # Test bayesian optimization
 # This searcher costs about 10 minutes.
-# SEARCHER="example_bayesian_optimization"
-# python3 main.py -o $SEARCHER -d $DATASET -i $N_ITERATION -s $N_SUGGESTION -r $N_REPEAT
+SEARCHER="example_bayesian_optimization"
+python3 main.py -o $SEARCHER -d $DATASET -i $N_ITERATION -s $N_SUGGESTION -r $N_REPEAT
 
 
 # Run searcher in one dataset for one repeat
