@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Dataset name
-DATASET="data-30 data-2"
+DATASET="data-2 data-30"
 
 # Default experimental parameters in competition
 # Number of iterations
@@ -24,7 +24,7 @@ command -v python3 >/dev/null 2>&1 || (echo err:python3 is not found, please ins
 
 # Test bayesian optimization
 # This searcher costs about 10 minutes.
-SEARCHER="example_bayesian_optimization"
+SEARCHER="my_bayesian_optimization1"
 python3 main.py -o $SEARCHER -d $DATASET -i $N_ITERATION -s $N_SUGGESTION -r $N_REPEAT
 
 

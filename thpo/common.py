@@ -88,7 +88,7 @@ def experiment_parser(description):
     add_argument(parser, CmdArgs.n_iteration, default=20, type=positive_int)
     add_argument(parser, CmdArgs.n_suggestions, default=5, type=positive_int)
     add_argument(parser, CmdArgs.n_repeat, default=10, type=positive_int)
-    add_argument(parser, CmdArgs.timeout, default=600, type=int)
+    add_argument(parser, CmdArgs.timeout, default=1800, type=int)
     add_argument(parser, CmdArgs.all_iters, default=100, type=positive_int)
     add_argument(parser, CmdArgs.repear_num, default=1, type=positive_int)
 

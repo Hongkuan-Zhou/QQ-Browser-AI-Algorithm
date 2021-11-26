@@ -5,7 +5,7 @@ import importlib
 import time
 import json
 import traceback
-
+import numpy as np
 from collections import Iterable
 
 sys.path.append(".")
@@ -14,6 +14,7 @@ from thpo.evaluate_function import EvaluateFunction
 
 
 confidence_iteration_count = 14
+
 
 def get_implement_searcher(searcher_root):
     """ Get the searcher implemented in the searcher_root directory
@@ -30,6 +31,18 @@ def get_implement_searcher(searcher_root):
     ip_module = importlib.import_module('.searcher', searcher_root)
     ip_module_class = getattr(ip_module, "Searcher")
     return ip_module_class
+
+
+# class NpEncoder(json.JSONEncoder):
+#     def default(self, obj):
+#         if isinstance(obj, np.integer):
+#             return int(obj)
+#         elif isinstance(obj, np.floating):
+#             return float(obj)
+#         elif isinstance(obj, np.ndarray):
+#             return obj.tolist()
+#         else:
+#             return super(NpEncoder, self).default(obj)
 
 
 def save_to_result_file(result_file, eva_data_name, repeat_num, iteration, suggestion, reward):
